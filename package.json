@@ -1,0 +1,24 @@
+{
+  "name": "earlgrey-runtime",
+  "version": "0.0.0",
+  "description": "Runtime for the Earl Grey programming language.",
+  "main": "./lib.js",
+  "dependencies": {
+      "6to5": ">= 2.5.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "homepage": "http://breuleux.github.io/earl-grey/repl",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/breuleux/earl-grey-runtime"
+  },
+  "keywords": [
+    "Programming language",
+    "Macros",
+    "Pattern matching"
+  ],
+  "author": "Olivier Breuleux",
+  "license": "MIT"
+}
