@@ -1,5 +1,7 @@
 
-require("6to5/polyfill");
+// require("6to5/polyfill");
+require("traceur-runtime");
+global["promisify"] = require("es6-promisify");
 
 // EXTENSIONS TO STANDARD OBJECTS
 
@@ -366,14 +368,14 @@ function dir(arg) {
         else if (arg === true || arg === false)
             return helper(Boolean.prototype);
         else {
-            var curr = obj;
+            var curr = arg;
             var results = [];
-            while (curr && (obj === Object || curr !== Object)) {
+            while (curr && (arg === Object || curr !== Object)) {
                 var props = Object.getOwnPropertyNames(curr);
                 for (var i = 0; i < props.length; i++) {
                     var k = props[i];
                     if (!k.match(/^toString|^__|^::/))
-                        results.push([k, obj[k]]);
+                        results.push([k, arg[k]]);
                 }
                 curr = Object.getPrototypeOf(curr);
             }
@@ -429,6 +431,40 @@ function getProjector(type) {
     }
 }
 global["getProjector"] = getProjector;
+
+
+
+// SPAWN
+
+// adapted from https://github.com/lukehoban/ecmascript-asyncawait
+function spawn(genF) {
+    return new Promise(function(resolve, reject) {
+        var gen = genF();
+        function step(nextF) {
+            var next;
+            try {
+                next = nextF();
+            } catch(e) {
+                // finished with failure, reject the promise
+                reject(e); 
+                return;
+            }
+            if(next.done) {
+                // finished with success, resolve the promise
+                resolve(next.value);
+                return;
+            } 
+            // not finished, chain off the yielded promise and `step` again
+            Promise.resolve(next.value).then(function(v) {
+                step(function() { return gen.next(v); });      
+            }, function(e) {
+                step(function() { return gen.throw(e); });
+            });
+        }
+        step(function() { return gen.next(undefined); });
+    });
+}
+global["spawn"] = spawn;
 
 
 
@@ -502,4 +538,5 @@ Node.prototype[":::project"] = function (n) {
     else
         return [false, null]
 };
+
 
