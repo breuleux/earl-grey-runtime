@@ -67,6 +67,14 @@ var _array_methods = {
     },
     "::serialize_ast": function () {
         return ["array"].concat(this.map(_serialize_ast));
+    },
+    "::send": function (x) {
+        if (x instanceof range) {
+            return this.slice(x.start, x.end);
+        }
+        else {
+            throw Error("Array does not recognize message: " + x);
+        }
     }
 };
 
@@ -169,7 +177,7 @@ function send(obj, msg) {
     var t = typeof(msg);
     if (t === "string" || t === "number")
         return obj[msg];
-    else if (t === "object" && obj["::send"])
+    else if (t === "object" && (obj instanceof Object && obj["::send"]))
         return obj["::send"](msg);
     else
         throw Error(obj + " cannot receive message '" + msg + "'");
@@ -249,7 +257,7 @@ function product(a, b) {
     var results = [];
     for (var i = 0; i < a.length; i++) {
         for (var j = 0; j < b.length; j++) {
-            results.push([a[i], b[j]);
+            results.push([a[i], b[j]]);
         }
     }
     return results;
@@ -363,11 +371,26 @@ global["clone"] = clone;
 
 
 function range(from, to) {
-    var rval = [];
-    for (var i = from; i <= to; i++)
-        rval.push(i);
-    return rval
+    if (!(this instanceof range))
+        return new range(from, to)
+    this.start = from
+    this.end = to
 }
+range.prototype[Symbol.iterator] = function () {
+    var self = this;
+    var current = self.start;
+    return {
+        next: function () {
+            if (current >= self.end + 1)
+                return {value: undefined, done: true}
+            else {
+                var rval = {value: current, done: false}
+                current++;
+                return rval;
+            }
+        }
+    }
+};
 global["range"] = range;
 
 
