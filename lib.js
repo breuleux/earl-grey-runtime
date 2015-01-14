@@ -245,6 +245,18 @@ function zip() {
 global["zip"] = zip;
 
 
+function product(a, b) {
+    var results = [];
+    for (var i = 0; i < a.length; i++) {
+        for (var j = 0; j < b.length; j++) {
+            results.push([a[i], b[j]);
+        }
+    }
+    return results;
+}
+global["product"] = product;
+
+
 function neighbours(arr, n) {
     n = n || 2;
     var r = [];
