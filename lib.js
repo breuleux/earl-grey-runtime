@@ -3,6 +3,16 @@
 require("traceur-runtime");
 global["promisify"] = require("es6-promisify");
 
+
+// SYMBOLS
+
+Symbol.check = "::check"
+Symbol.project = "::project"
+Symbol.projectNoExc = ":::project"
+Symbol.clone = "::clone"
+Symbol.send = "::send"
+
+
 // EXTENSIONS TO STANDARD OBJECTS
 
 String["::check"] = function (value) {
@@ -365,7 +375,7 @@ function clone(a) {
         }
         return dest;
     }
-    throw E.create("clone")("Object cannot be cloned");
+    throw ErrorFactory("clone").create("Object cannot be cloned");
 }
 global["clone"] = clone;
 
@@ -460,13 +470,28 @@ function getProjector(type) {
     }
     else {
         return f.bind(type);
-        // return function(value) {
-        //     return f.call(type, value)
-        // };
     }
 }
 global["getProjector"] = getProjector;
 
+
+
+function consume(gen, n) {
+    if (!gen || !gen.next || n <= 0) {
+        return gen;
+    }
+    n = n || Infinity;
+    var curr = gen.next();
+    var results = [];
+    var i = 0;
+    while (!curr.done && i < n) {
+        results.push(curr.value);
+        curr = gen.next();
+        i++;
+    }
+    return results;
+}
+global["consume"] = consume;
 
 
 // SPAWN
