@@ -11,6 +11,7 @@ Symbol.project = "::project"
 Symbol.projectNoExc = ":::project"
 Symbol.clone = "::clone"
 Symbol.send = "::send"
+Symbol.contains = "::contains"
 
 
 // EXTENSIONS TO STANDARD OBJECTS
@@ -78,14 +79,18 @@ var _array_methods = {
     "::serialize_ast": function () {
         return ["array"].concat(this.map(_serialize_ast));
     },
-    "::send": function (x) {
-        if (x instanceof range) {
-            return this.slice(x.start, x.end);
-        }
-        else {
-            throw Error("Array does not recognize message: " + x);
-        }
+    "::contains": function (b) {
+        return this.indexOf(b) !== -1;
     }
+
+    // "::send": function (x) {
+    //     if (x instanceof range) {
+    //         return this.slice(x.start, x.end);
+    //     }
+    //     else {
+    //         throw Error("Array does not recognize message: " + x);
+    //     }
+    // }
 };
 
 var _re_methods = {
@@ -187,6 +192,8 @@ function send(obj, msg) {
     var t = typeof(msg);
     if (t === "string" || t === "number")
         return obj[msg];
+    else if (msg instanceof range)
+        return obj.slice(msg.start, msg.end);
     else if (t === "object" && (obj instanceof Object && obj["::send"]))
         return obj["::send"](msg);
     else
@@ -340,6 +347,13 @@ function nequal(a, b) {
 }
 global["__bang____equal__"] = nequal;
 global["nequal"] = nequal;
+
+
+function contains(a, b) {
+    return a["::contains"](b);
+}
+global["__in__"] = function(a, b) { return contains(b, a); };
+global["contains"] = contains;
 
 
 function mergeInplace(dest, values) {
