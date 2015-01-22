@@ -1,7 +1,6 @@
 
 // require("6to5/polyfill");
 require("traceur-runtime");
-global["promisify"] = require("es6-promisify");
 
 
 // SYMBOLS
@@ -508,7 +507,29 @@ function consume(gen, n) {
 global["consume"] = consume;
 
 
-// SPAWN
+// ASYNC TOOLS
+
+function promisify(fn, custom) {
+    return function () {
+        var args = [].slice.call(arguments);
+        return new Promise(function (resolve, reject) {
+            function callback(err, result) {
+                if (custom) {
+                    var self = {resolve: resolve, reject: reject};
+                    return custom.apply(self, [].slice.call(arguments));
+                }
+                else {
+                    if (err) { return reject(err); }
+                    else { return resolve(result); }
+                }
+            }
+            args.push(callback);
+            return fn.apply(fn, args);
+        });
+    }
+}
+global["promisify"] = promisify;
+
 
 // adapted from https://github.com/lukehoban/ecmascript-asyncawait
 function spawn(genF) {
