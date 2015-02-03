@@ -1,8 +1,4 @@
 
-// require("6to5/polyfill");
-require("traceur-runtime");
-
-
 // SYMBOLS
 
 Symbol.check = "::check"
