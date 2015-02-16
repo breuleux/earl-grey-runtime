@@ -159,7 +159,8 @@ function ___serialize_ast(x) {
 global["___serialize_ast"] = ___serialize_ast;
 
 function ___match_error(value, url, start, end) {
-    var err = ErrorFactory("match").create(
+    var err = ErrorFactory("match").createFrom(
+        ___match_error,
         "Could not find a match for value",
         {value: value});
     if (url)
@@ -185,7 +186,7 @@ global["___extend"] = ___extend;
 
 function send(obj, msg) {
     var t = typeof(msg);
-    if (t === "string" || t === "number")
+    if (t === "string" || t === "number" || t === "symbol")
         return obj[msg];
     else if (msg instanceof range)
         return obj.slice(msg.start, msg.end);
@@ -410,6 +411,7 @@ range.prototype[Symbol.iterator] = function () {
         }
     }
 };
+
 global["range"] = range;
 
 
@@ -529,15 +531,16 @@ global["promisify"] = promisify;
 
 // adapted from https://github.com/lukehoban/ecmascript-asyncawait
 function spawn(genF) {
+    var self = this;
     return new Promise(function(resolve, reject) {
-        var gen = genF();
+        var gen = genF.call(self);
         function step(nextF) {
             var next;
             try {
                 next = nextF();
             } catch(e) {
                 // finished with failure, reject the promise
-                reject(e); 
+                reject(e);
                 return;
             }
             if(next.done) {
@@ -568,6 +571,12 @@ function ErrorFactory(tags) {
 }
 global["ErrorFactory"] = ErrorFactory;
 
+ErrorFactory.prototype.createFrom = function(callee) {
+    var e = this.create.apply(this, [].slice.call(arguments, 1));
+    Error.captureStackTrace(e, callee);
+    return e;
+}
+
 ErrorFactory.prototype.create = function(message) {
     var e = Error(message);
     e["::tags"] = this.tags;
@@ -577,6 +586,7 @@ ErrorFactory.prototype.create = function(message) {
     });
     e.length = e.args.length;
     e.name = ["E"].concat(this.tags).join(".");
+    Error.captureStackTrace(e, ErrorFactory.prototype.create);
     return e;
 }
 
