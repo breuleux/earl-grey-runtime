@@ -7,6 +7,7 @@ Symbol.projectNoExc = ":::project"
 Symbol.clone = "::clone"
 Symbol.send = "::send"
 Symbol.contains = "::contains"
+Symbol.repr = "::repr"
 
 
 // EXTENSIONS TO STANDARD OBJECTS
@@ -350,6 +351,17 @@ function contains(a, b) {
 }
 global["__in__"] = function(a, b) { return contains(b, a); };
 global["contains"] = contains;
+
+
+function repr(x) {
+    if (x["::repr"]) {
+        return x["::repr"](repr);
+    }
+    else {
+        return String(x);
+    }
+}
+global["repr"] = repr;
 
 
 function mergeInplace(dest, values) {
