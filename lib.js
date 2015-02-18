@@ -12,32 +12,32 @@ Symbol.repr = "::repr"
 
 // EXTENSIONS TO STANDARD OBJECTS
 
-String["::check"] = function (value) {
+String[Symbol.check] = function (value) {
     return typeof(value) === "string";
 };
 
-String[":::project"] = function (value) {
+String[Symbol.projectNoExc] = function (value) {
     return [true, String(value)]
 };
 
-Number["::check"] = function (value) {
+Number[Symbol.check] = function (value) {
     return typeof(value) === "number";
 };
 
-Number[":::project"] = function (value) {
+Number[Symbol.projectNoExc] = function (value) {
     return [true, parseFloat(value)]
 };
 
-Boolean["::check"] = function (value) {
+Boolean[Symbol.check] = function (value) {
     return typeof(value) === "boolean";
 };
 
-Boolean[":::project"] = function (value) {
+Boolean[Symbol.projectNoExc] = function (value) {
     return [true, Boolean(value)]
 };
 
-// no need for Array["::check"] because instanceof works
-Array[":::project"] = function (value) {
+// no need for Array[Symbol.check] because instanceof works
+Array[Symbol.projectNoExc] = function (value) {
     if (value instanceof Array)
         return [true, value]
     else
@@ -191,8 +191,8 @@ function send(obj, msg) {
         return obj[msg];
     else if (msg instanceof range)
         return obj.slice(msg.start, msg.end);
-    else if (t === "object" && (obj instanceof Object && obj["::send"]))
-        return obj["::send"](msg);
+    else if (t === "object" && (obj instanceof Object && obj[Symbol.send]))
+        return obj[Symbol.send](msg);
     else
         throw Error(obj + " cannot receive message '" + msg + "'");
 }
@@ -291,7 +291,7 @@ global["neighbours"] = neighbours;
 
 
 function predicate(f) {
-    f["::check"] = f;
+    f[Symbol.check] = f;
     return f;
 }
 global["predicate"] = predicate;
@@ -347,15 +347,15 @@ global["nequal"] = nequal;
 
 
 function contains(a, b) {
-    return a["::contains"](b);
+    return a[Symbol.contains](b);
 }
 global["__in__"] = function(a, b) { return contains(b, a); };
 global["contains"] = contains;
 
 
 function repr(x) {
-    if (x["::repr"]) {
-        return x["::repr"](repr);
+    if (x[Symbol.repr]) {
+        return x[Symbol.repr](repr);
     }
     else {
         return String(x);
@@ -387,8 +387,8 @@ function clone(a) {
         || typeof(a) === "string"
         || typeof(a) === "boolean")
         return a
-    if (typeof(a) === "object" && a["::clone"])
-        return a["::clone"]();
+    if (typeof(a) === "object" && a[Symbol.clone])
+        return a[Symbol.clone]();
     if (Object.getPrototypeOf(a) === Object.prototype) {
         var dest = {};
         for (var key in a) {
@@ -456,7 +456,7 @@ global["dir"] = dir;
 
 
 function getChecker(type) {
-    var f = type["::check"];
+    var f = type[Symbol.check];
     if (f === undefined) {
         return function (value) {
             return value instanceof type;
@@ -472,9 +472,9 @@ global["getChecker"] = getChecker;
 
 
 function getProjector(type) {
-    var f = type[":::project"];
+    var f = type[Symbol.projectNoExc];
     if (f === undefined) {
-        f = type["::project"];
+        f = type[Symbol.project];
         if (f === undefined) {
             return function(value) {
                 return [true, type(value)];
@@ -602,7 +602,7 @@ ErrorFactory.prototype.create = function(message) {
     return e;
 }
 
-ErrorFactory.prototype["::check"] = function(e) {
+ErrorFactory.prototype[Symbol.check] = function(e) {
     if (!e || !(e instanceof Error))
         return false
     var tags = e["::tags"] || [];
@@ -627,7 +627,7 @@ function Node(tags, props, children) {
 }
 global["Node"] = Node;
 
-Node.prototype["::check"] = function (n) {
+Node.prototype[Symbol.check] = function (n) {
     if (!(n instanceof Node))
         return false;
     for (var i = 0; i < this.tags.length; i++) {
@@ -645,8 +645,8 @@ Node.prototype["::check"] = function (n) {
     return true;
 };
 
-Node.prototype[":::project"] = function (n) {
-    if (this["::check"](n))
+Node.prototype[Symbol.projectNoExc] = function (n) {
+    if (this[Symbol.check](n))
         return [true, [n.tags, n.props, n.children]]
     else
         return [false, null]
