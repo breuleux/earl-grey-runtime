@@ -2,10 +2,6 @@
 if (typeof(global) === "undefined")
     global = window;
 
-if (global._egruntime_installed)
-    return
-global._egruntime_installed = true;
-
 // SYMBOLS
 
 Symbol.check = "::check"
@@ -53,19 +49,19 @@ Array[":::project"] = function (value) {
 
 var _number_methods = {
     "::repr": function(_repr) {
-        return Node([".num"], {}, this);
+        return ENode([".num"], {}, this);
     }
 };
 
 var _string_methods = {
     "::repr": function(_repr) {
-        return Node([".str"], {}, this);
+        return ENode([".str"], {}, this);
     }
 };
 
 var _boolean_methods = {
     "::repr": function(_repr) {
-        return Node([".bool"], {}, this);
+        return ENode([".bool"], {}, this);
     }
 };
 
@@ -75,9 +71,9 @@ var _object_methods = {
         var ch = [];
         for (var i = 0; i < it.length; i++) {
             var curr = it[i];
-            ch.push(Node([".assoc"], {}, [_repr(curr[0]), _repr(curr[1])]));
+            ch.push(ENode([".assoc"], {}, [_repr(curr[0]), _repr(curr[1])]));
         }
-        return Node([".object"], {}, ch);
+        return ENode([".object"], {}, ch);
     }
 };
 
@@ -116,7 +112,7 @@ var _array_methods = {
         return this.indexOf(b) !== -1;
     },
     "::repr": function (_repr) {
-        return Node([".array"], {}, this.map(_repr));
+        return ENode([".array"], {}, this.map(_repr));
     }
 
     // "::send": function (x) {
@@ -664,33 +660,34 @@ ErrorFactory.prototype["::check"] = function(e) {
 
 // NODE OBJECTS
 
-function Node(tags, props, children) {
-    if (!(this instanceof Node))
-        return new Node(tags, props, children);
+function ENode(tags, props, children) {
+    if (!(this instanceof ENode))
+        return new ENode(tags, props, children);
     if (!(tags instanceof Array)) { tags = [tags]; }
     if (!(children instanceof Array)) { children = [children]; }
     this.tags = tags;
     this.props = props;
     this.children = children;
 }
-Node["::egclass"] = true;
-Node["::name"] = "Node";
-global["Node"] = Node;
+ENode["::egclass"] = true;
+ENode["::name"] = "ENode";
+// global["Node"] = ENode;
+global["ENode"] = ENode;
 
-Node.fromObject = function (x) {
+ENode.fromObject = function (x) {
     if (x && typeof(x) === "object" && x.tags && x.props && x.children) {
-        return Node(x.tags, x.props, Node.fromObject(x.children));
+        return ENode(x.tags, x.props, ENode.fromObject(x.children));
     }
     else if (Array.isArray(x)) {
-        return x.map(Node.fromObject);
+        return x.map(ENode.fromObject);
     }
     else {
         return x;
     }
 }
 
-Node.prototype["::check"] = function (n) {
-    if (!(n instanceof Node))
+ENode.prototype["::check"] = function (n) {
+    if (!(n instanceof ENode))
         return false;
     for (var i = 0; i < this.tags.length; i++) {
         if (n.tags.indexOf(this.tags[i]) === -1)
@@ -707,18 +704,18 @@ Node.prototype["::check"] = function (n) {
     return true;
 };
 
-Node.prototype[":::project"] = function (n) {
+ENode.prototype[":::project"] = function (n) {
     if (this["::check"](n))
         return [true, [n.tags, n.props, n.children]]
     else
         return [false, null]
 };
 
-Node.prototype["::repr"] = function (repr) {
+ENode.prototype["::repr"] = function (repr) {
     return this;
 };
 
-Node.prototype.hasTag = function (tag) {
+ENode.prototype.hasTag = function (tag) {
     return this.tags.indexOf(tag) !== -1;
 };
 
@@ -736,12 +733,12 @@ Node.prototype.hasTag = function (tag) {
 //     }
 // }
 
-// Node.prototype.translate = function (lang, style) {
+// ENode.prototype.translate = function (lang, style) {
 //     var s = merge(defaultStyle, style);
 //     eee
 // };
 
-// Node.prototype.toString = function (style) {
+// ENode.prototype.toString = function (style) {
 //     if (!style) style = defaultStyle;
 //     var s = ;
 //     if (style.substyles)
