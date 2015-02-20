@@ -1,4 +1,11 @@
 
+if (typeof(global) === "undefined")
+    global = window;
+
+if (global._egruntime_installed)
+    return
+global._egruntime_installed = true;
+
 // SYMBOLS
 
 Symbol.check = "::check"
@@ -12,36 +19,66 @@ Symbol.repr = "::repr"
 
 // EXTENSIONS TO STANDARD OBJECTS
 
-String[Symbol.check] = function (value) {
+String["::check"] = function (value) {
     return typeof(value) === "string";
 };
 
-String[Symbol.projectNoExc] = function (value) {
+String[":::project"] = function (value) {
     return [true, String(value)]
 };
 
-Number[Symbol.check] = function (value) {
+Number["::check"] = function (value) {
     return typeof(value) === "number";
 };
 
-Number[Symbol.projectNoExc] = function (value) {
+Number[":::project"] = function (value) {
     return [true, parseFloat(value)]
 };
 
-Boolean[Symbol.check] = function (value) {
+Boolean["::check"] = function (value) {
     return typeof(value) === "boolean";
 };
 
-Boolean[Symbol.projectNoExc] = function (value) {
+Boolean[":::project"] = function (value) {
     return [true, Boolean(value)]
 };
 
 // no need for Array[Symbol.check] because instanceof works
-Array[Symbol.projectNoExc] = function (value) {
+Array[":::project"] = function (value) {
     if (value instanceof Array)
         return [true, value]
     else
         return [true, [value]]
+};
+
+var _number_methods = {
+    "::repr": function(_repr) {
+        return Node([".num"], {}, this);
+    }
+};
+
+var _string_methods = {
+    "::repr": function(_repr) {
+        return Node([".str"], {}, this);
+    }
+};
+
+var _boolean_methods = {
+    "::repr": function(_repr) {
+        return Node([".bool"], {}, this);
+    }
+};
+
+var _object_methods = {
+    "::repr": function(_repr) {
+        var it = items(this);
+        var ch = [];
+        for (var i = 0; i < it.length; i++) {
+            var curr = it[i];
+            ch.push(Node([".assoc"], {}, [_repr(curr[0]), _repr(curr[1])]));
+        }
+        return Node([".object"], {}, ch);
+    }
 };
 
 var _array_methods = {
@@ -77,6 +114,9 @@ var _array_methods = {
     },
     "::contains": function (b) {
         return this.indexOf(b) !== -1;
+    },
+    "::repr": function (_repr) {
+        return Node([".array"], {}, this.map(_repr));
     }
 
     // "::send": function (x) {
@@ -115,14 +155,19 @@ var _function_methods = {
     }
 };
 
-[[Array, _array_methods],
+[[Number, _number_methods],
+ [String, _string_methods],
+ [Boolean, _boolean_methods],
+ [Array, _array_methods],
  [RegExp, _re_methods],
- [Function, _function_methods]].map(function (nm) {
+ [Function, _function_methods],
+ [Object, _object_methods]].map(function (nm) {
      items(nm[1]).map(function (kv) {
          if (!nm[0].prototype[kv[0]])
              Object.defineProperty(nm[0].prototype, kv[0], {
                  enumerate: false,
-                 value: kv[1]
+                 value: kv[1],
+                 writable: true
              });
      });
  });
@@ -191,8 +236,8 @@ function send(obj, msg) {
         return obj[msg];
     else if (msg instanceof range)
         return obj.slice(msg.start, msg.end);
-    else if (t === "object" && (obj instanceof Object && obj[Symbol.send]))
-        return obj[Symbol.send](msg);
+    else if (t === "object" && (obj instanceof Object && obj["::send"]))
+        return obj["::send"](msg);
     else
         throw Error(obj + " cannot receive message '" + msg + "'");
 }
@@ -291,7 +336,7 @@ global["neighbours"] = neighbours;
 
 
 function predicate(f) {
-    f[Symbol.check] = f;
+    f["::check"] = f;
     return f;
 }
 global["predicate"] = predicate;
@@ -347,15 +392,16 @@ global["nequal"] = nequal;
 
 
 function contains(a, b) {
-    return a[Symbol.contains](b);
+    return a["::contains"](b);
 }
 global["__in__"] = function(a, b) { return contains(b, a); };
 global["contains"] = contains;
 
 
-function repr(x) {
-    if (x[Symbol.repr]) {
-        return x[Symbol.repr](repr);
+function repr(x, _repr) {
+    if (!_repr) _repr = repr;
+    if (x["::repr"]) {
+        return x["::repr"](_repr);
     }
     else {
         return String(x);
@@ -387,8 +433,8 @@ function clone(a) {
         || typeof(a) === "string"
         || typeof(a) === "boolean")
         return a
-    if (typeof(a) === "object" && a[Symbol.clone])
-        return a[Symbol.clone]();
+    if (typeof(a) === "object" && a["::clone"])
+        return a["::clone"]();
     if (Object.getPrototypeOf(a) === Object.prototype) {
         var dest = {};
         for (var key in a) {
@@ -408,6 +454,8 @@ function range(from, to) {
     this.start = from
     this.end = to
 }
+range["::egclass"] = true;
+range["::name"] = "range";
 range.prototype[Symbol.iterator] = function () {
     var self = this;
     var current = self.start;
@@ -456,7 +504,7 @@ global["dir"] = dir;
 
 
 function getChecker(type) {
-    var f = type[Symbol.check];
+    var f = type["::check"];
     if (f === undefined) {
         return function (value) {
             return value instanceof type;
@@ -472,9 +520,9 @@ global["getChecker"] = getChecker;
 
 
 function getProjector(type) {
-    var f = type[Symbol.projectNoExc];
+    var f = type[":::project"];
     if (f === undefined) {
-        f = type[Symbol.project];
+        f = type["::project"];
         if (f === undefined) {
             return function(value) {
                 return [true, type(value)];
@@ -602,7 +650,7 @@ ErrorFactory.prototype.create = function(message) {
     return e;
 }
 
-ErrorFactory.prototype[Symbol.check] = function(e) {
+ErrorFactory.prototype["::check"] = function(e) {
     if (!e || !(e instanceof Error))
         return false
     var tags = e["::tags"] || [];
@@ -625,9 +673,23 @@ function Node(tags, props, children) {
     this.props = props;
     this.children = children;
 }
+Node["::egclass"] = true;
+Node["::name"] = "Node";
 global["Node"] = Node;
 
-Node.prototype[Symbol.check] = function (n) {
+Node.fromObject = function (x) {
+    if (x && typeof(x) === "object" && x.tags && x.props && x.children) {
+        return Node(x.tags, x.props, Node.fromObject(x.children));
+    }
+    else if (Array.isArray(x)) {
+        return x.map(Node.fromObject);
+    }
+    else {
+        return x;
+    }
+}
+
+Node.prototype["::check"] = function (n) {
     if (!(n instanceof Node))
         return false;
     for (var i = 0; i < this.tags.length; i++) {
@@ -645,11 +707,45 @@ Node.prototype[Symbol.check] = function (n) {
     return true;
 };
 
-Node.prototype[Symbol.projectNoExc] = function (n) {
-    if (this[Symbol.check](n))
+Node.prototype[":::project"] = function (n) {
+    if (this["::check"](n))
         return [true, [n.tags, n.props, n.children]]
     else
         return [false, null]
 };
 
+Node.prototype["::repr"] = function (repr) {
+    return this;
+};
+
+Node.prototype.hasTag = function (tag) {
+    return this.tags.indexOf(tag) !== -1;
+};
+
+
+// var defaultStyle = {
+//     substyles: {
+//         ".sequence": {
+//             before: "{",
+//             after: "}",
+//             join: ", "
+//         }
+//         ".assoc": {
+//             join: " => "
+//         }
+//     }
+// }
+
+// Node.prototype.translate = function (lang, style) {
+//     var s = merge(defaultStyle, style);
+//     eee
+// };
+
+// Node.prototype.toString = function (style) {
+//     if (!style) style = defaultStyle;
+//     var s = ;
+//     if (style.substyles)
+//         s = style.substyles[]
+
+// };
 
