@@ -751,30 +751,75 @@ ENode.prototype.toString = function () {
     return this.children.map(function (x) { return String(x); }).join("");
 };
 
+function escapeHTML(s) {
+    repl = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;"
+    }
+    return s.replace(/[&<>]/g, function (x) { return repl[x]; });
+}
 
-// var defaultStyle = {
-//     substyles: {
-//         ".sequence": {
-//             before: "{",
-//             after: "}",
-//             join: ", "
-//         }
-//         ".assoc": {
-//             join: " => "
-//         }
-//     }
-// }
+function quotify(s) {
+    return '"' + s.replace(/["\\]/g, function (x) { return "\\" + x; }) + '"';
+}
 
-// ENode.prototype.translate = function (lang, style) {
-//     var s = merge(defaultStyle, style);
-//     eee
-// };
+voidTags = [
+    "area", "base", "br", "col", "command", "embed", "hr",
+    "img", "input", "keygen", "link", "meta", "param", "source",
+    "track", "wbr"
+]
 
-// ENode.prototype.toString = function (style) {
-//     if (!style) style = defaultStyle;
-//     var s = ;
-//     if (style.substyles)
-//         s = style.substyles[]
+function toHTML(x) {
+    if (typeof(x) === "string") {
+        return escapeHTML(x);
+    }
+    if (Array.isArray(x)) {
+        return x.map(function (x) { return toHTML(x); }).join("");
+    }
+    if (x instanceof ENode) {
+        var raw = false;
+        var tag = null;
+        var classes = [];
+        var attrs = items(x.props);
+        x.tags.forEach(function (t) {
+            if (t[0] === ".")
+                classes.push(t.slice(1));
+            else if (t[0] === "#")
+                attrs.unshift(["id", t.slice(1)]);
+            else if (t === "raw")
+                raw = true
+            else
+                tag = t;
+        });
+        if (classes.length > 0)
+            attrs.unshift(["class", classes.join(" ")]);
 
-// };
+        var result = "";
+        if (tag != null || attrs.length > 0) {
+            tag = tag || "span";
+            result += "<" + tag;
+            attrs.forEach(function (kv) {
+                result += " " + kv[0] + "=" + quotify(String(kv[1]));
+            });
+            result += ">"
+        }
+        if (x.children.length > 0) {
+            x.children.forEach(function (c) {
+                result += raw ? String(c) : toHTML(c);
+            });
+            if (tag) {
+                result += "</" + tag + ">"
+            }
+        }
+        else if (tag && voidTags.indexOf(tag) == -1) {
+            result += "</" + tag + ">"
+        }
+        return result;
+    }
+    return toHTML(String(x));
+}
 
+ENode.prototype.toHTML = function () {
+    return toHTML(this);
+};
