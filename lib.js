@@ -112,7 +112,7 @@ var _array_methods = {
         return this.indexOf(b) !== -1;
     },
     "::repr": function (_repr) {
-        return ENode([".array"], {}, this.map(_repr));
+        return ENode([".array"], {}, this.map(function (x) {return _repr(x); }));
     }
 
     // "::send": function (x) {
@@ -396,6 +396,9 @@ global["contains"] = contains;
 
 function repr(x, _repr) {
     if (!_repr) _repr = repr;
+    if (x === null || x === undefined) {
+        return ENode(["." + String(x)], {}, []);
+    }
     if (x["::repr"]) {
         return x["::repr"](_repr);
     }
@@ -466,6 +469,13 @@ range.prototype[Symbol.iterator] = function () {
             }
         }
     }
+};
+range.prototype.toArray = function () {
+    var res = [];
+    for (var i = this.start; i <= this.end; i++) {
+        res.push(i);
+    }
+    return res;
 };
 
 global["range"] = range;
@@ -544,10 +554,22 @@ global["getProjector"] = getProjector;
 
 
 function consume(gen, n) {
+    if (n === null || n === undefined)
+        n = Infinity;
     if (!gen || !gen.next || n <= 0) {
+        if (!Array.isArray(gen) && gen[Symbol.iterator]) {
+            var res = [];
+            var it = gen[Symbol.iterator]();
+            var curr = it.next();
+            var i = 0;
+            for (var i = 0; !curr.done && i < n; i++) {
+                res.push(curr.value);
+                curr = it.next();
+            }
+            return res;
+        }
         return gen;
     }
-    n = n || Infinity;
     var curr = gen.next();
     var results = [];
     var i = 0;
@@ -559,6 +581,7 @@ function consume(gen, n) {
     return results;
 }
 global["consume"] = consume;
+global["take"] = consume;
 
 
 // ASYNC TOOLS
@@ -717,6 +740,10 @@ ENode.prototype["::repr"] = function (repr) {
 
 ENode.prototype.hasTag = function (tag) {
     return this.tags.indexOf(tag) !== -1;
+};
+
+ENode.prototype.concat = function (other) {
+    return ENode([], {}, [this, other]);
 };
 
 
