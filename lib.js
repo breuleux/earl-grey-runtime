@@ -746,6 +746,11 @@ ENode.prototype.concat = function (other) {
     return ENode([], {}, [this, other]);
 };
 
+ENode.prototype.toString = function () {
+    // toString() ignores tags and props entirely
+    return this.children.map(function (x) { return String(x); }).join("");
+};
+
 
 // var defaultStyle = {
 //     substyles: {
