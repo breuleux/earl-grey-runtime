@@ -1,6 +1,6 @@
 
-if (global._egruntime_installed)
-    return
+if (!global._egruntime_installed) {
+    global._egruntime_installed = true;
+    require("./lib");
+}
 
-global._egruntime_installed = true;
-require("./lib");
