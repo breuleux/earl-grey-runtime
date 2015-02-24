@@ -39,13 +39,17 @@ Boolean[":::project"] = function (value) {
     return [true, Boolean(value)]
 };
 
-// no need for Array[Symbol.check] because instanceof works
+Array["::check"] = function (value) {
+    return this.isArray(value);
+};
+
 Array[":::project"] = function (value) {
     if (value instanceof Array)
         return [true, value]
     else
         return [true, [value]]
 };
+
 
 var _number_methods = {
     "::repr": function(_repr) {
@@ -54,6 +58,9 @@ var _number_methods = {
 };
 
 var _string_methods = {
+    "::contains": function(x) {
+        return this.includes(x);
+    },
     "::repr": function(_repr) {
         return ENode([".str"], {}, this);
     }
@@ -61,19 +68,34 @@ var _string_methods = {
 
 var _boolean_methods = {
     "::repr": function(_repr) {
-        return ENode([".bool"], {}, this);
+        return ENode([".bool", "." + String(this)], {}, this);
     }
 };
 
 var _object_methods = {
     "::repr": function(_repr) {
         var it = items(this);
-        var ch = [];
-        for (var i = 0; i < it.length; i++) {
-            var curr = it[i];
-            ch.push(ENode([".assoc"], {}, [_repr(curr[0]), _repr(curr[1])]));
+        function mktable() {
+            var ch = [];
+            for (var i = 0; i < it.length; i++) {
+                var curr = it[i];
+                ch.push(ENode([".assoc"], {}, [_repr(curr[0]), _repr(curr[1])]));
+            }
+            return ENode([".object"], {}, ch);
         }
-        return ENode([".object"], {}, ch);
+        if (this["::egclass"]) {
+            return ENode([".class"], {}, [
+                ENode([".name"], {}, [this["::name"]]),
+                mktable()
+            ]);
+        }
+        if (this.constructor && this.constructor["::egclass"]) {
+            return ENode([".instance"], {}, [
+                ENode([".name"], {}, [this.constructor["::name"]]),
+                mktable()
+            ]);
+        }
+        return mktable();
     }
 };
 
@@ -113,6 +135,9 @@ var _array_methods = {
     },
     "::repr": function (_repr) {
         return ENode([".array"], {}, this.map(function (x) {return _repr(x); }));
+    },
+    "ejoin": function (sep) {
+        return ENode([], {}, this.map(function (x) { return repr(x); })).join(sep);
     }
 
     // "::send": function (x) {
@@ -142,10 +167,21 @@ var _re_methods = {
         }
         else
             return [false, null];
+    },
+    "::contains": function(x) {
+        return typeof(x) === "string" && this.test(x);
     }
 };
 
 var _function_methods = {
+    "::repr": function(_repr) {
+        if (this["::egclass"]) {
+            return Object.prototype["::repr"].call(this, _repr);
+        }
+        else {
+            return ENode([".function"], {}, [this.name || "<anonymous>"]);
+        }
+    },
     "::send": function(args) {
         return this.apply(this, args);
     }
@@ -397,7 +433,7 @@ global["contains"] = contains;
 function repr(x, _repr) {
     if (!_repr) _repr = repr;
     if (x === null || x === undefined) {
-        return ENode(["." + String(x)], {}, []);
+        return ENode(["." + String(x)], {}, [String(x)]);
     }
     if (x["::repr"]) {
         return x["::repr"](_repr);
@@ -476,6 +512,9 @@ range.prototype.toArray = function () {
         res.push(i);
     }
     return res;
+};
+range.prototype["::check"] = function (x) {
+    return x >= this.start && x <= this.end;
 };
 
 global["range"] = range;
@@ -744,6 +783,17 @@ ENode.prototype.hasTag = function (tag) {
 
 ENode.prototype.concat = function (other) {
     return ENode([], {}, [this, other]);
+};
+
+ENode.prototype.join = function (sep) {
+    if (sep === undefined)
+        return this;
+    var children = [];
+    for (var i = 0; i < this.children.length; i++) {
+        if (i > 0) children.push(sep);
+        children.push(this.children[i]);
+    }
+    return ENode(this.tags, this.props, children);
 };
 
 ENode.prototype.toString = function () {
