@@ -1,4 +1,6 @@
 
+"use strict";
+
 if (typeof(global) === "undefined")
     global = window;
 
@@ -53,7 +55,7 @@ Array[":::project"] = function (value) {
 
 var _number_methods = {
     "::repr": function(_repr) {
-        return ENode([".num"], {}, this);
+        return ENode([".num"], {}, [this]);
     }
 };
 
@@ -62,13 +64,13 @@ var _string_methods = {
         return this.includes(x);
     },
     "::repr": function(_repr) {
-        return ENode([".str"], {}, this);
+        return ENode([".str"], {}, [this]);
     }
 };
 
 var _boolean_methods = {
     "::repr": function(_repr) {
-        return ENode([".bool", "." + String(this)], {}, this);
+        return ENode([".bool", "." + String(this)], {}, [this]);
     }
 };
 
@@ -816,7 +818,7 @@ function quotify(s) {
     return '"' + s.replace(/["\\]/g, function (x) { return "\\" + x; }) + '"';
 }
 
-voidTags = [
+var voidTags = [
     "area", "base", "br", "col", "command", "embed", "hr",
     "img", "input", "keygen", "link", "meta", "param", "source",
     "track", "wbr"
