@@ -806,7 +806,7 @@ ENode.prototype.toString = function () {
 };
 
 function escapeHTML(s) {
-    repl = {
+    var repl = {
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;"
@@ -824,56 +824,133 @@ var voidTags = [
     "track", "wbr"
 ]
 
-function toHTML(x) {
-    if (typeof(x) === "string") {
-        return escapeHTML(x);
-    }
+function collapse(x) {
     if (Array.isArray(x)) {
-        return x.map(function (x) { return toHTML(x); }).join("");
+        var res = [];
+        x.forEach(function (y) {
+            if (Array.isArray(y))
+                res = res.concat(y);
+            else
+                res.push(y);
+        });
+        return res;
     }
-    if (x instanceof ENode) {
+    else {
+        return x;
+    }
+}
+
+function convertHTML(x, create) {
+    // create(tag, attrs, children)
+    if (Array.isArray(x)) {
+        return collapse(x.map(function (x) { return convertHTML(x, create); }));
+    }
+    else if (x instanceof ENode) {
         var raw = false;
         var tag = null;
         var classes = [];
-        var attrs = items(x.props);
+        var attrs = clone(x.props);
+        var children = [];
         x.tags.forEach(function (t) {
             if (t[0] === ".")
                 classes.push(t.slice(1));
             else if (t[0] === "#")
-                attrs.unshift(["id", t.slice(1)]);
+                attrs.id = t.slice(1);
             else if (t === "raw")
                 raw = true
             else
                 tag = t;
         });
         if (classes.length > 0)
-            attrs.unshift(["class", classes.join(" ")]);
-
-        var result = "";
-        if (tag != null || attrs.length > 0) {
-            tag = tag || "span";
-            result += "<" + tag;
-            attrs.forEach(function (kv) {
-                result += " " + kv[0] + "=" + quotify(String(kv[1]));
-            });
-            result += ">"
-        }
-        if (x.children.length > 0) {
+            attrs["class"] = classes.join(" ");
+        if (raw) {
+            attrs.innerHTML = "";
             x.children.forEach(function (c) {
-                result += raw ? String(c) : toHTML(c);
+                attrs.innerHTML += String(c);
             });
-            if (tag) {
-                result += "</" + tag + ">"
-            }
+        }
+        else {
+            x.children.forEach(function (c) {
+                children.push(convertHTML(c, create));
+            });
+        }
+        children = collapse(children);
+
+        if (tag === null && equal(attrs, {})) {
+            return children;
+        }
+        else {
+            return create(tag || "span", attrs, children);
+        }
+    }
+    else {
+        return create(null, null, x);
+    }
+}
+
+function toHTML(tag, attrs, children) {
+    if (tag === null) {
+        return escapeHTML(String(children));
+    }
+    else {
+        var result = "";
+        result += "<" + tag;
+        items(attrs).forEach(function (kv) {
+            result += " " + kv[0] + "=" + quotify(String(kv[1]));
+        });
+        result += ">"
+        if (children.length > 0) {
+            children.forEach(function (c) {
+                result += c;
+            });
+            result += "</" + tag + ">"
         }
         else if (tag && voidTags.indexOf(tag) == -1) {
             result += "</" + tag + ">"
         }
-        return result;
+        return result;            
     }
-    return toHTML(String(x));
 }
 
-ENode.prototype.toHTML = function () {
-    return toHTML(this);
+function toDOM(tag, attrs, children) {
+    if (tag === null) {
+        if (children instanceof Element)
+            return children;
+        else
+            return document.createTextNode(String(children));
+    }
+    else {
+        if (attrs.namespace)
+            var node = document.createElementNS(attrs.namespace, tag);
+        else
+            var node = document.createElement(tag);
+        if (attrs.id) node.id = attrs.id;
+        if (attrs["class"]) node.className = attrs["class"];
+        if (attrs.innerHTML) {
+            node.innerHTML = attrs.innerHTML;
+            delete attrs.innerHTLM;
+        }
+        items(attrs).forEach(function (kv) {
+            node.setAttribute(kv[0], kv[1]);
+        });
+        children.forEach(function (c) {
+            node.appendChild(c);
+        });
+        return node;
+    }
+}
+
+ENode.getHTMLConverter = function (converter) {
+    if (converter === undefined || converter === "string" || converter === "html")
+        return toHTML;
+    else if (converter === "dom")
+        return toDOM;
+    return converter;
+};
+
+ENode.prototype.toHTML = function (converter) {
+    var res = convertHTML(this, ENode.getHTMLConverter(converter));
+    if (Array.isArray(res))
+        res = converter("span", {}, res);
+    return res;
 };
