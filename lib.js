@@ -691,7 +691,8 @@ global["ErrorFactory"] = ErrorFactory;
 
 ErrorFactory.prototype.createFrom = function(callee) {
     var e = this.create.apply(this, [].slice.call(arguments, 1));
-    Error.captureStackTrace(e, callee);
+    if (Error.captureStackTrace)
+        Error.captureStackTrace(e, callee);
     return e;
 }
 
@@ -704,7 +705,8 @@ ErrorFactory.prototype.create = function(message) {
     });
     e.length = e.args.length;
     e.name = ["E"].concat(this.tags).join(".");
-    Error.captureStackTrace(e, ErrorFactory.prototype.create);
+    if (Error.captureStackTrace)
+        Error.captureStackTrace(e, ErrorFactory.prototype.create);
     return e;
 }
 
