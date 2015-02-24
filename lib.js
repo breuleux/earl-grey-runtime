@@ -54,7 +54,10 @@ Array[":::project"] = function (value) {
 
 
 var _number_methods = {
-    "::repr": function(_repr) {
+    "::lightweight": function() {
+        return true;
+    },
+    "::repr": function(state) {
         return ENode([".num"], {}, [this]);
     }
 };
@@ -63,25 +66,34 @@ var _string_methods = {
     "::contains": function(x) {
         return this.includes(x);
     },
-    "::repr": function(_repr) {
+    "::lightweight": function() {
+        return true;
+    },
+    "::repr": function(state) {
         return ENode([".str"], {}, [this]);
     }
 };
 
 var _boolean_methods = {
-    "::repr": function(_repr) {
+    "::lightweight": function() {
+        return true;
+    },
+    "::repr": function(state) {
         return ENode([".bool", "." + String(this)], {}, [this]);
     }
 };
 
 var _object_methods = {
-    "::repr": function(_repr) {
+    "::repr": function(state) {
         var it = items(this);
         function mktable() {
             var ch = [];
             for (var i = 0; i < it.length; i++) {
                 var curr = it[i];
-                ch.push(ENode([".assoc"], {}, [_repr(curr[0]), _repr(curr[1])]));
+                ch.push(ENode([".assoc"], {}, [
+                    state.repr(curr[0], state),
+                    state.repr(curr[1], state)
+                ]));
             }
             return ENode([".object"], {}, ch);
         }
@@ -135,11 +147,15 @@ var _array_methods = {
     "::contains": function (b) {
         return this.indexOf(b) !== -1;
     },
-    "::repr": function (_repr) {
-        return ENode([".array"], {}, this.map(function (x) {return _repr(x); }));
+    "::repr": function (state) {
+        return ENode([".array"], {}, this.map(function (x) {
+            return state.repr(x, state);
+        }));
     },
     "ejoin": function (sep) {
-        return ENode([], {}, this.map(function (x) { return repr(x); })).join(sep);
+        return ENode([], {}, this.map(function (x) {
+            return repr(x);
+        })).join(sep);
     }
 
     // "::send": function (x) {
@@ -176,9 +192,9 @@ var _re_methods = {
 };
 
 var _function_methods = {
-    "::repr": function(_repr) {
+    "::repr": function(state) {
         if (this["::egclass"]) {
-            return Object.prototype["::repr"].call(this, _repr);
+            return Object.prototype["::repr"].call(this, state);
         }
         else {
             return ENode([".function"], {}, [this.name || "<anonymous>"]);
@@ -432,19 +448,51 @@ global["__in__"] = function(a, b) { return contains(b, a); };
 global["contains"] = contains;
 
 
-function repr(x, _repr) {
-    if (!_repr) _repr = repr;
+function repr(x, state) {
+    if (!state)
+        state = {depth: 0, seen: new Map(), repr: repr};
+
+    if (state.preprocess)
+        x = state.preprocess(x);
+
     if (x === null || x === undefined) {
         return ENode(["." + String(x)], {}, [String(x)]);
     }
-    if (x["::repr"]) {
-        return x["::repr"](_repr);
+    if (state.seen.has(x) && !(x["::lightweight"] && x["::lightweight"]())) {
+        return ENode([".circular"], {}, ["Circular"]);
     }
     else {
-        return String(x);
+        state.seen.set(x, undefined);
+        if (x["::repr"]) {
+            var rval = x["::repr"]({
+                depth: state.depth + 1,
+                seen: state.seen,
+                preprocess: state.preprocess,
+                repr: repr
+            });
+        }
+        else {
+            var rval = String(x);
+        }
+        state.seen.set(x, rval);
     }
+    return rval;
 }
 global["repr"] = repr;
+
+// function repr(x, _repr) {
+//     if (!_repr) _repr = repr;
+//     if (x === null || x === undefined) {
+//         return ENode(["." + String(x)], {}, [String(x)]);
+//     }
+//     if (x["::repr"]) {
+//         return x["::repr"](_repr);
+//     }
+//     else {
+//         return String(x);
+//     }
+// }
+// global["repr"] = repr;
 
 
 function mergeInplace(dest, values) {
