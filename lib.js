@@ -267,7 +267,7 @@ function send(obj, msg) {
     if (t === "string" || t === "number" || t === "symbol")
         return obj[msg];
     else if (msg instanceof range)
-        return obj.slice(msg.start, msg.end);
+        return obj.slice(msg.start, msg.end + 1);
     else if (t === "object" && (obj instanceof Object && obj["::send"]))
         return obj["::send"](msg);
     else
