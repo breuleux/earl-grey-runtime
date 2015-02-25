@@ -84,33 +84,6 @@ var _boolean_methods = {
 };
 
 var _object_methods = {
-    "::repr": function(repr) {
-        var it = items(this);
-        function mktable() {
-            var ch = [];
-            for (var i = 0; i < it.length; i++) {
-                var curr = it[i];
-                ch.push(ENode([".assoc"], {}, [
-                    repr(curr[0]),
-                    repr(curr[1])
-                ]));
-            }
-            return ENode([".object"], {}, ch);
-        }
-        if (this["::egclass"]) {
-            return ENode([".class"], {}, [
-                ENode([".name"], {}, [this["::name"]]),
-                mktable()
-            ]);
-        }
-        if (this.constructor && this.constructor["::egclass"]) {
-            return ENode([".instance"], {}, [
-                ENode([".name"], {}, [this.constructor["::name"]]),
-                mktable()
-            ]);
-        }
-        return mktable();
-    }
 };
 
 var _array_methods = {
@@ -177,12 +150,21 @@ var _re_methods = {
         else
             return [false, null];
     },
+    "::lightweight": function() {
+        return true;
+    },
+    "::repr": function(repr) {
+        return ENode([".regexp"], {}, String(this).slice(1, -1));
+    },
     "::contains": function(x) {
         return typeof(x) === "string" && this.test(x);
     }
 };
 
 var _function_methods = {
+    "::lightweight": function() {
+        return true;
+    },
     "::repr": function(repr) {
         if (this["::egclass"]) {
             return Object.prototype["::repr"].call(this, repr);
@@ -427,6 +409,19 @@ global["__in__"] = function(a, b) { return contains(b, a); };
 global["contains"] = contains;
 
 
+function mktable(obj) {
+    var it = items(obj);
+    var ch = [];
+    for (var i = 0; i < it.length; i++) {
+        var curr = it[i];
+        ch.push(ENode([".assoc"], {}, [
+            repr(curr[0]),
+            repr(curr[1])
+        ]));
+    }
+    return ENode([".object"], {}, ch);
+}
+
 function createRepr(state) {
 
     if (!state)
@@ -450,8 +445,23 @@ function createRepr(state) {
                         wrap: state.wrap
                     }));
                 }
+                else if (x["::egclass"]) {
+                    var rval = ENode([".class"], {}, [
+                        ENode([".name"], {}, [x["::name"]]),
+                        mktable(x)
+                    ]);
+                }
+                else if (x.constructor && x.constructor["::egclass"]) {
+                    var rval = ENode([".instance"], {}, [
+                        ENode([".name"], {}, [x.constructor["::name"]]),
+                        mktable(x)
+                    ]);
+                }
+                else if (Object.getPrototypeOf(x) === Object.prototype) {
+                    var rval = mktable(x);
+                }
                 else {
-                    var rval = String(x);
+                    var rval = ENode([".unknown"], {}, [String(x)]);
                 }
                 state.seen.set(x, rval);
             }
