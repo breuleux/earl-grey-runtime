@@ -57,7 +57,7 @@ var _number_methods = {
     "::lightweight": function() {
         return true;
     },
-    "::repr": function(state) {
+    "::repr": function(_) {
         return ENode([".num"], {}, [this]);
     }
 };
@@ -69,7 +69,7 @@ var _string_methods = {
     "::lightweight": function() {
         return true;
     },
-    "::repr": function(state) {
+    "::repr": function(_) {
         return ENode([".str"], {}, [this]);
     }
 };
@@ -78,21 +78,21 @@ var _boolean_methods = {
     "::lightweight": function() {
         return true;
     },
-    "::repr": function(state) {
+    "::repr": function(_) {
         return ENode([".bool", "." + String(this)], {}, [this]);
     }
 };
 
 var _object_methods = {
-    "::repr": function(state) {
+    "::repr": function(repr) {
         var it = items(this);
         function mktable() {
             var ch = [];
             for (var i = 0; i < it.length; i++) {
                 var curr = it[i];
                 ch.push(ENode([".assoc"], {}, [
-                    state.repr(curr[0], state),
-                    state.repr(curr[1], state)
+                    repr(curr[0]),
+                    repr(curr[1])
                 ]));
             }
             return ENode([".object"], {}, ch);
@@ -147,9 +147,9 @@ var _array_methods = {
     "::contains": function (b) {
         return this.indexOf(b) !== -1;
     },
-    "::repr": function (state) {
+    "::repr": function (repr) {
         return ENode([".array"], {}, this.map(function (x) {
-            return state.repr(x, state);
+            return repr(x);
         }));
     },
     "ejoin": function (sep) {
@@ -192,9 +192,9 @@ var _re_methods = {
 };
 
 var _function_methods = {
-    "::repr": function(state) {
+    "::repr": function(repr) {
         if (this["::egclass"]) {
-            return Object.prototype["::repr"].call(this, state);
+            return Object.prototype["::repr"].call(this, repr);
         }
         else {
             return ENode([".function"], {}, [this.name || "<anonymous>"]);
@@ -448,36 +448,56 @@ global["__in__"] = function(a, b) { return contains(b, a); };
 global["contains"] = contains;
 
 
-function repr(x, state) {
+function createRepr(state) {
+
     if (!state)
-        state = {depth: 0, seen: new Map(), repr: repr};
+        state = {depth: 0, seen: new Map()};
 
-    if (state.preprocess)
-        x = state.preprocess(x);
+    function repr(x) {
 
-    if (x === null || x === undefined) {
-        return ENode(["." + String(x)], {}, [String(x)]);
-    }
-    if (state.seen.has(x) && !(x["::lightweight"] && x["::lightweight"]())) {
-        return ENode([".circular"], {}, ["Circular"]);
-    }
-    else {
-        state.seen.set(x, undefined);
-        if (x["::repr"]) {
-            var rval = x["::repr"]({
-                depth: state.depth + 1,
-                seen: state.seen,
-                preprocess: state.preprocess,
-                repr: repr
-            });
+        function process(x) {
+            if (x === null || x === undefined) {
+                return ENode(["." + String(x)], {}, [String(x)]);
+            }
+            if (state.seen.has(x) && !(x["::lightweight"] && x["::lightweight"]())) {
+                return ENode([".redundant"], {}, ["Redundant"]);
+            }
+            else {
+                state.seen.set(x, undefined);
+                if (x["::repr"]) {
+                    var rval = x["::repr"](createRepr({
+                        depth: state.depth + 1,
+                        seen: state.seen,
+                        wrap: state.wrap
+                    }));
+                }
+                else {
+                    var rval = String(x);
+                }
+                state.seen.set(x, rval);
+            }
+            return rval;
+        }
+        process.repr = repr
+
+        if (state.wrap) {
+            return state.wrap(x, process);
         }
         else {
-            var rval = String(x);
+            return process(x)
         }
-        state.seen.set(x, rval);
     }
-    return rval;
+    mergeInplace(repr, state);
+    return repr;
 }
+
+function repr(x, wrap) {
+    return repr.create(wrap)(x);
+}
+repr.create = function (wrap) {
+    return createRepr({depth: 0, seen: new Map(), wrap: wrap});
+}
+
 global["repr"] = repr;
 
 // function repr(x, _repr) {
@@ -928,11 +948,11 @@ function convertHTML(x, create) {
             return children;
         }
         else {
-            return create(tag || "span", attrs, children);
+            return create(tag || "span", attrs, children, x);
         }
     }
     else {
-        return create(null, null, x);
+        return create(null, null, x, x);
     }
 }
 
@@ -979,7 +999,10 @@ function toDOM(tag, attrs, children) {
             delete attrs.innerHTLM;
         }
         items(attrs).forEach(function (kv) {
-            node.setAttribute(kv[0], kv[1]);
+            if (kv[0].startsWith("on"))
+                node[kv[0]] = kv[1];
+            else
+                node.setAttribute(kv[0], kv[1]);
         });
         children.forEach(function (c) {
             node.appendChild(c);
@@ -997,7 +1020,8 @@ ENode.getHTMLConverter = function (converter) {
 };
 
 ENode.prototype.toHTML = function (converter) {
-    var res = convertHTML(this, ENode.getHTMLConverter(converter));
+    converter = ENode.getHTMLConverter(converter);
+    var res = convertHTML(this, converter);
     if (Array.isArray(res))
         res = converter("span", {}, res);
     return res;
