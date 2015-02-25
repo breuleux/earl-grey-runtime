@@ -58,7 +58,7 @@ var _number_methods = {
         return true;
     },
     "::repr": function(_) {
-        return ENode([".num"], {}, [this]);
+        return simpleENode(".num", this);
     }
 };
 
@@ -70,7 +70,7 @@ var _string_methods = {
         return true;
     },
     "::repr": function(_) {
-        return ENode([".str"], {}, [this]);
+        return simpleENode(".str", this);
     }
 };
 
@@ -121,7 +121,7 @@ var _array_methods = {
         return this.indexOf(b) !== -1;
     },
     "::repr": function (repr) {
-        return ENode([".array"], {}, this.map(function (x) {
+        return simpleENode(".array", this.map(function (x) {
             return repr(x);
         }));
     },
@@ -154,7 +154,7 @@ var _re_methods = {
         return true;
     },
     "::repr": function(repr) {
-        return ENode([".regexp"], {}, String(this).slice(1, -1));
+        return simpleENode(".regexp", String(this).slice(1, -1));
     },
     "::contains": function(x) {
         return typeof(x) === "string" && this.test(x);
@@ -170,7 +170,7 @@ var _function_methods = {
             return Object.prototype["::repr"].call(this, repr);
         }
         else {
-            return ENode([".function"], {}, [this.name || "<anonymous>"]);
+            return simpleENode(".function", this.name || "<anonymous>");
         }
     },
     "::send": function(args) {
@@ -414,12 +414,12 @@ function mktable(obj) {
     var ch = [];
     for (var i = 0; i < it.length; i++) {
         var curr = it[i];
-        ch.push(ENode([".assoc"], {}, [
+        ch.push(simpleENode(".assoc", [
             repr(curr[0]),
             repr(curr[1])
         ]));
     }
-    return ENode([".object"], {}, ch);
+    return simpleENode(".object", ch);
 }
 
 function createRepr(state) {
@@ -431,7 +431,7 @@ function createRepr(state) {
 
         function process(x) {
             if (x === null || x === undefined) {
-                return ENode(["." + String(x)], {}, [String(x)]);
+                return simpleENode("." + String(x), String(x));
             }
             if (state.seen.has(x) && !(x["::lightweight"] && x["::lightweight"]())) {
                 return ENode([".redundant"], {}, ["Redundant"]);
@@ -446,14 +446,14 @@ function createRepr(state) {
                     }));
                 }
                 else if (x["::egclass"]) {
-                    var rval = ENode([".class"], {}, [
-                        ENode([".name"], {}, [x["::name"]]),
+                    var rval = simpleENode(".class", [
+                        simpleENode(".name", x["::name"]),
                         mktable(x)
                     ]);
                 }
                 else if (x.constructor && x.constructor["::egclass"]) {
-                    var rval = ENode([".instance"], {}, [
-                        ENode([".name"], {}, [x.constructor["::name"]]),
+                    var rval = simpleENode(".instance", [
+                        simpleENode(".name", x.constructor["::name"]),
                         mktable(x)
                     ]);
                 }
@@ -461,7 +461,7 @@ function createRepr(state) {
                     var rval = mktable(x);
                 }
                 else {
-                    var rval = ENode([".unknown"], {}, [String(x)]);
+                    var rval = simpleENode(".unknown", String(x));
                 }
                 state.seen.set(x, rval);
             }
@@ -768,6 +768,10 @@ ErrorFactory.prototype["::check"] = function(e) {
 
 
 // NODE OBJECTS
+
+function simpleENode(tag, children) {
+    return ENode([tag], {}, children);
+}
 
 function ENode(tags, props, children) {
     if (!(this instanceof ENode))
