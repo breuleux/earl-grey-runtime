@@ -597,8 +597,14 @@ function dir(arg) {
                 var props = Object.getOwnPropertyNames(curr);
                 for (var i = 0; i < props.length; i++) {
                     var k = props[i];
-                    if (!k.match(/^toString|^__|^::/))
-                        results.push([k, arg[k]]);
+                    if (!k.match(/^toString|^__|^::/)) {
+                        try {
+                            results.push([k, arg[k]]);
+                        }
+                        catch (e) {
+                            results.push([k, e]);
+                        }
+                    }
                 }
                 curr = Object.getPrototypeOf(curr);
             }
