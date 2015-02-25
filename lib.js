@@ -484,7 +484,8 @@ function createRepr(state) {
                 return rval;
             }
         }
-        process.repr = repr
+        mergeInplace(process, state);
+        process.repr = repr;
 
         if (state.wrap) {
             return state.wrap(x, process);
@@ -494,14 +495,18 @@ function createRepr(state) {
         }
     }
     mergeInplace(repr, state);
+    repr.withState = function (newstate) {
+        return createRepr(merge(state, newstate));
+    }
     return repr;
 }
 
 function repr(x, wrap) {
-    return repr.create(wrap)(x);
+    return repr.withState({wrap: wrap})(x);
 }
-repr.create = function (wrap) {
-    return createRepr({depth: 0, seen: new Map(), refid: 1, wrap: wrap});
+repr.withState = repr.create = function (state) {
+    state = merge({depth: 0, seen: new Map(), refid: 1}, state);
+    return createRepr(state);
 }
 
 global["repr"] = repr;
