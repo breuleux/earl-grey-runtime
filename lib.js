@@ -157,15 +157,6 @@ var _array_methods = {
             return repr(x);
         })).join(sep);
     }
-
-    // "::send": function (x) {
-    //     if (x instanceof range) {
-    //         return this.slice(x.start, x.end);
-    //     }
-    //     else {
-    //         throw Error("Array does not recognize message: " + x);
-    //     }
-    // }
 };
 
 var _re_methods = {
@@ -324,18 +315,6 @@ function items(obj) {
     return rval;
 }
 global["items"] = items;
-
-
-// function values(obj) {
-//     var rval = [];
-//     for (var k in obj) {
-//         if (Object.prototype.hasOwnProperty.call(obj, k)) {
-//             rval.push(obj[k]);
-//         }
-//     }
-//     return rval;
-// }
-// global["values"] = values;
 
 
 function enumerate(arr) {
@@ -499,20 +478,6 @@ repr.create = function (wrap) {
 }
 
 global["repr"] = repr;
-
-// function repr(x, _repr) {
-//     if (!_repr) _repr = repr;
-//     if (x === null || x === undefined) {
-//         return ENode(["." + String(x)], {}, [String(x)]);
-//     }
-//     if (x["::repr"]) {
-//         return x["::repr"](_repr);
-//     }
-//     else {
-//         return String(x);
-//     }
-// }
-// global["repr"] = repr;
 
 
 function mergeInplace(dest, values) {
@@ -873,24 +838,6 @@ ENode.prototype.toString = function () {
     return this.children.map(function (x) { return String(x); }).join("");
 };
 
-function escapeHTML(s) {
-    var repl = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;"
-    }
-    return s.replace(/[&<>]/g, function (x) { return repl[x]; });
-}
-
-function quotify(s) {
-    return '"' + s.replace(/["\\]/g, function (x) { return "\\" + x; }) + '"';
-}
-
-var voidTags = [
-    "area", "base", "br", "col", "command", "embed", "hr",
-    "img", "input", "keygen", "link", "meta", "param", "source",
-    "track", "wbr"
-]
 
 function collapse(x) {
     if (Array.isArray(x)) {
@@ -909,7 +856,7 @@ function collapse(x) {
 }
 
 function convertHTML(x, create) {
-    // create(tag, attrs, children)
+    // create(tag, attrs, children, source)
     if (Array.isArray(x)) {
         return collapse(x.map(function (x) { return convertHTML(x, create); }));
     }
@@ -955,6 +902,26 @@ function convertHTML(x, create) {
         return create(null, null, x, x);
     }
 }
+
+
+function escapeHTML(s) {
+    var repl = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;"
+    }
+    return s.replace(/[&<>]/g, function (x) { return repl[x]; });
+}
+
+function quotify(s) {
+    return '"' + s.replace(/["\\]/g, function (x) { return "\\" + x; }) + '"';
+}
+
+var voidTags = [
+    "area", "base", "br", "col", "command", "embed", "hr",
+    "img", "input", "keygen", "link", "meta", "param", "source",
+    "track", "wbr"
+]
 
 function toHTML(tag, attrs, children) {
     if (tag === null) {
