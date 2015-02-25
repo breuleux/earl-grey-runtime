@@ -433,17 +433,31 @@ function createRepr(state) {
             if (x === null || x === undefined) {
                 return simpleENode("." + String(x), String(x));
             }
-            if (state.seen.has(x) && !(x["::lightweight"] && x["::lightweight"]())) {
-                return ENode([".redundant"], {}, ["Redundant"]);
+            var prev = state.seen.get(x);
+            if (prev && !(x["::lightweight"] && x["::lightweight"]())) {
+                if (prev === true) {
+                    var id = state.refid++;
+                    state.seen.set(x, id);
+                    return simpleENode(".reference", id);
+                }
+                else if (typeof(prev) === "number") {
+                    return simpleENode(".reference", prev);
+                }
+                else if (prev.props._refid) {
+                    return simpleENode(".reference", prev.props._refid);
+                }
+                else {
+                    prev.props._refid = state.refid++;
+                    return simpleENode(".reference", prev.props._refid);
+                }
+                // return ENode([".redundant"], {}, ["Redundant"]);
             }
             else {
-                state.seen.set(x, undefined);
+                state.seen.set(x, true);
                 if (x["::repr"]) {
-                    var rval = x["::repr"](createRepr({
-                        depth: state.depth + 1,
-                        seen: state.seen,
-                        wrap: state.wrap
-                    }));
+                    var rval = x["::repr"](
+                        createRepr(merge(state, {depth: state.depth + 1}))
+                    );
                 }
                 else if (x["::egclass"]) {
                     var rval = simpleENode(".class", [
@@ -463,9 +477,12 @@ function createRepr(state) {
                 else {
                     var rval = simpleENode(".unknown", String(x));
                 }
+                var ref = state.seen.get(x);
+                if (typeof(ref) === "number")
+                    rval.props._refid = ref;
                 state.seen.set(x, rval);
+                return rval;
             }
-            return rval;
         }
         process.repr = repr
 
@@ -484,7 +501,7 @@ function repr(x, wrap) {
     return repr.create(wrap)(x);
 }
 repr.create = function (wrap) {
-    return createRepr({depth: 0, seen: new Map(), wrap: wrap});
+    return createRepr({depth: 0, seen: new Map(), refid: 1, wrap: wrap});
 }
 
 global["repr"] = repr;
