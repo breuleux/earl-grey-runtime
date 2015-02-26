@@ -167,7 +167,10 @@ var _function_methods = {
     },
     "::repr": function(repr) {
         if (this["::egclass"]) {
-            return Object.prototype["::repr"].call(this, repr);
+            return simpleENode(".class", [
+                simpleENode(".name", this["::name"]),
+                mktable(this.prototype)
+            ]);
         }
         else {
             return simpleENode(".function", this.name || "<anonymous>");
@@ -458,12 +461,6 @@ function createRepr(state) {
                     var rval = x["::repr"](
                         createRepr(merge(state, {depth: state.depth + 1}))
                     );
-                }
-                else if (x["::egclass"]) {
-                    var rval = simpleENode(".class", [
-                        simpleENode(".name", x["::name"]),
-                        mktable(x)
-                    ]);
                 }
                 else if (x.constructor && x.constructor["::egclass"]) {
                     var rval = simpleENode(".instance", [
@@ -812,7 +809,6 @@ function ENode(tags, props, children) {
 }
 ENode["::egclass"] = true;
 ENode["::name"] = "ENode";
-// global["Node"] = ENode;
 global["ENode"] = ENode;
 
 ENode.fromObject = function (x) {
