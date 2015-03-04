@@ -177,7 +177,20 @@ var _function_methods = {
         }
     },
     "::send": function(args) {
-        return this.apply(this, args);
+        if (Array.isArray(args)) {
+            var ins = args["::objinsert"];
+            if (ins !== undefined) {
+                var newargs = args.slice(0);
+                newargs.splice(ins, ins, args);
+                return this.apply(this, newargs);
+            }
+            else {
+                return this.apply(this, args);
+            }
+        }
+        else {
+            return this(args);
+        }
     }
 };
 
@@ -1028,6 +1041,6 @@ ENode.prototype.toHTML = function (converter) {
     converter = ENode.getHTMLConverter(converter);
     var res = convertHTML(this, converter);
     if (Array.isArray(res))
-        res = converter("span", {}, res);
+        res = converter("div", {}, res);
     return res;
 };
