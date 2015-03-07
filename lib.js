@@ -255,7 +255,7 @@ function ___match_error(value, url, start, end) {
 global["___match_error"] = ___match_error;
 
 function ___extend(child, parent) {
-    items(parents).forEach(function (kv) {
+    items(parent).forEach(function (kv) {
         child[kv[0]] = kv[1];
     });
     child.prototype = Object.create(parent.prototype);
@@ -269,16 +269,25 @@ global["___extend"] = ___extend;
 
 // USER FUNCTIONS
 
-function send(obj, msg) {
+
+function send(obj, msg, called) {
     var t = typeof(msg);
-    if (t === "string" || t === "number" || t === "symbol")
-        return obj[msg];
+    var result = null;
+
+    if (t === "string" || t === "number" || t === "symbol") {
+        result = obj[msg];
+    }
     else if (msg instanceof range)
-        return obj.slice(msg.start, msg.end + 1);
+        result = obj.slice(msg.start, msg.end + 1);
     else if (t === "object" && (obj instanceof Object && obj["::send"]))
-        return obj["::send"](msg);
+        result = obj["::send"](msg);
     else
         throw Error(obj + " cannot receive message '" + msg + "'");
+
+    if (called && typeof(result) == "function")
+        return result.bind(obj);
+    else
+        return result
 }
 global["send"] = send;
 
