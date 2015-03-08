@@ -84,6 +84,9 @@ var _boolean_methods = {
 };
 
 var _object_methods = {
+    "hasProperty": function (prop) {
+        return prop in this;
+    }
 };
 
 var _array_methods = {
@@ -290,6 +293,19 @@ function send(obj, msg, called) {
         return result
 }
 global["send"] = send;
+
+function getProperty(obj, prop, objname) {
+    if (Object.hasProperty.call(obj, prop)) {
+        return obj[prop];
+    }
+    else {
+        throw ErrorFactory("no_property").createFrom(
+            getProperty,
+            "'" + (objname || obj.toString()) + "' does not have property '" + prop + "'"
+        );
+    }
+}
+global["getProperty"] = getProperty;
 
 
 function object(pairs) {
