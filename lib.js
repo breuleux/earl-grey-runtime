@@ -1003,13 +1003,24 @@ function toHTML(tag, attrs, children) {
     if (tag === null) {
         return escapeHTML(String(children));
     }
+    else if (tag === "top") {
+        return children.join("");
+    }
     else {
         var result = "";
         result += "<" + tag;
+        var innerhtml = null;
+        if (attrs.innerHTML) {
+            innerhtml = String(attrs.innerHTML);
+            delete attrs.innerHTML;
+        }
         items(attrs).forEach(function (kv) {
             result += " " + kv[0] + "=" + quotify(String(kv[1]));
         });
         result += ">"
+        if (innerhtml) {
+            result += innerhtml + "</" + tag + ">"
+        }
         if (children.length > 0) {
             children.forEach(function (c) {
                 result += c;
@@ -1029,6 +1040,13 @@ function toDOM(tag, attrs, children) {
             return children;
         else
             return document.createTextNode(String(children));
+    }
+    else if (tag === "top") {
+        var node = document.createElement(tag);
+        children.forEach(function (c) {
+            node.appendChild(c);
+        });
+        return node;
     }
     else {
         if (attrs.namespace)
@@ -1066,6 +1084,8 @@ ENode.prototype.toHTML = function (converter) {
     converter = ENode.getHTMLConverter(converter);
     var res = convertHTML(this, converter);
     if (Array.isArray(res))
-        res = converter("div", {}, res);
+        res = converter("top", {}, res);
+    // if (Array.isArray(res))
+    //     res = res.join("");
     return res;
 };
