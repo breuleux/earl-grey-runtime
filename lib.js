@@ -970,6 +970,9 @@ function convertHTML(x, create) {
         if (tag === null && equal(attrs, {})) {
             return children;
         }
+        else if (tag === null && raw && equal(keys(attrs), ["innerHTML"])) {
+            return create("", attrs, children, x);
+        }
         else {
             return create(tag || "span", attrs, children, x);
         }
@@ -1008,7 +1011,8 @@ function toHTML(tag, attrs, children) {
     }
     else {
         var result = "";
-        result += "<" + tag;
+        if (tag != "")
+            result += "<" + tag;
         var innerhtml = null;
         if (attrs.innerHTML) {
             innerhtml = String(attrs.innerHTML);
@@ -1017,18 +1021,23 @@ function toHTML(tag, attrs, children) {
         items(attrs).forEach(function (kv) {
             result += " " + kv[0] + "=" + quotify(String(kv[1]));
         });
-        result += ">"
+        if (tag != "")
+            result += ">"
         if (innerhtml) {
-            result += innerhtml + "</" + tag + ">"
+            result += innerhtml
+            if (tag != "")
+                result += "</" + tag + ">"
         }
-        if (children.length > 0) {
+        else if (children.length > 0) {
             children.forEach(function (c) {
                 result += c;
             });
-            result += "</" + tag + ">"
+            if (tag != "")
+                result += "</" + tag + ">"
         }
         else if (tag && voidTags.indexOf(tag) == -1) {
-            result += "</" + tag + ">"
+            if (tag != "")
+                result += "</" + tag + ">"
         }
         return result;            
     }
@@ -1057,7 +1066,7 @@ function toDOM(tag, attrs, children) {
         if (attrs["class"]) node.className = attrs["class"];
         if (attrs.innerHTML) {
             node.innerHTML = attrs.innerHTML;
-            delete attrs.innerHTLM;
+            delete attrs.innerHTML;
         }
         items(attrs).forEach(function (kv) {
             if (kv[0].startsWith("on"))
