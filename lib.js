@@ -284,6 +284,8 @@ function send(obj, msg, called) {
         result = obj.slice(msg.start, msg.end + 1);
     else if (t === "object" && (obj instanceof Object && obj["::send"]))
         result = obj["::send"](msg);
+    else if (msg && Object.getPrototypeOf(msg) === Symbol.prototype)
+        result = obj[msg];
     else
         throw Error(obj + " cannot receive message '" + msg + "'");
 
