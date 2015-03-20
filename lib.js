@@ -620,6 +620,9 @@ range.prototype.toArray = function () {
 range.prototype["::check"] = function (x) {
     return x >= this.start && x <= this.end;
 };
+range.prototype["::contains"] = function (x) {
+    return x >= this.start && x <= this.end;
+};
 
 global["range"] = range;
 
