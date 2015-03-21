@@ -249,7 +249,7 @@ global["___serialize_ast"] = ___serialize_ast;
 function ___match_error(value, url, start, end) {
     var err = ErrorFactory("match").createFrom(
         ___match_error,
-        "Could not find a match for value",
+        "Could not find a match for value '" + String(value) + "'",
         {value: value});
     if (url)
         err.location = ["location", url, start, end]
