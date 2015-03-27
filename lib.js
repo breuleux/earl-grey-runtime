@@ -246,13 +246,12 @@ function ___serialize_ast(x) {
 }
 global["___serialize_ast"] = ___serialize_ast;
 
-function ___match_error(value, url, start, end) {
+function ___match_error(value, pattern_text) {
     var err = ErrorFactory("match").createFrom(
         ___match_error,
-        "Could not find a match for value '" + String(value) + "'",
+        (pattern_text ? "'" + pattern_text + "' c" : "C")
+        + "ould not find a match for value '" + String(value) + "'",
         {value: value});
-    if (url)
-        err.location = ["location", url, start, end]
     throw err;
 }
 global["___match_error"] = ___match_error;
