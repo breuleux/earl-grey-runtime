@@ -225,16 +225,17 @@ function ___build_array(arrays) {
 global["___build_array"] = ___build_array;
 
 function ___hasprop(obj, key) {
+    var t = typeof(obj);
     if (obj === null || obj === undefined)
         return false;
-    else if (typeof(obj) === "string")
+    else if (t === "string")
         return key in String.prototype;
-    else if (typeof(obj) === "number")
+    else if (t === "number")
         return key in Number.prototype;
-    else if (typeof(obj) === "boolean")
+    else if (t === "boolean")
         return key in Boolean.prototype;
-    else
-        return key in obj;
+    else if (key in obj || t === "function" && Array.isArray(key))
+        return true;
 }
 global["___hasprop"] = ___hasprop;
 
