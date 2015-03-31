@@ -281,7 +281,7 @@ function send(obj, msg, called) {
         result = obj[msg];
     }
     else if (msg instanceof range)
-        result = obj.slice(msg.start, msg.end + 1);
+        result = obj.slice(msg.start, msg.end === undefined ? msg.end : msg.end + 1);
     else if (t === "object" && (obj instanceof Object && obj["::send"]))
         result = obj["::send"](msg);
     else if (msg && Object.getPrototypeOf(msg) === Symbol.prototype)
