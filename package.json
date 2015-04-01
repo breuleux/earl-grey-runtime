@@ -1,6 +1,6 @@
 {
   "name": "earlgrey-runtime",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Runtime for the Earl Grey programming language.",
   "main": "./lib.js",
   "dependencies": {
