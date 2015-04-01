@@ -166,13 +166,13 @@ var _re_methods = {
 
 var _function_methods = {
     "::lightweight": function() {
-        return true;
+        return !this["::egclass"];
     },
     "::repr": function(repr) {
         if (this["::egclass"]) {
             return simpleENode(".class", [
                 simpleENode(".name", this["::name"]),
-                mktable(this.prototype)
+                mktable(this.prototype, repr)
             ]);
         }
         else {
@@ -234,8 +234,13 @@ function ___hasprop(obj, key) {
         return key in Number.prototype;
     else if (t === "boolean")
         return key in Boolean.prototype;
+    else if (t === "boolean")
+        return key in Boolean.prototype;
+    else if (t === "symbol")
+        return key in Symbol.prototype;
     else if (key in obj || t === "function" && Array.isArray(key))
         return true;
+    return false;
 }
 global["___hasprop"] = ___hasprop;
 
@@ -452,7 +457,7 @@ global["__in__"] = function(a, b) { return contains(b, a); };
 global["contains"] = contains;
 
 
-function mktable(obj) {
+function mktable(obj, repr) {
     var it = items(obj);
     var ch = [];
     for (var i = 0; i < it.length; i++) {
@@ -493,23 +498,21 @@ function createRepr(state) {
                     prev.props._refid = state.refid++;
                     return simpleENode(".reference", prev.props._refid);
                 }
-                // return ENode([".redundant"], {}, ["Redundant"]);
             }
             else {
                 state.seen.set(x, true);
+                var subrepr = createRepr(merge(state, {depth: state.depth + 1}));
                 if (x["::repr"]) {
-                    var rval = x["::repr"](
-                        createRepr(merge(state, {depth: state.depth + 1}))
-                    );
+                    var rval = x["::repr"](subrepr);
                 }
                 else if (x.constructor && x.constructor["::egclass"]) {
                     var rval = simpleENode(".instance", [
                         simpleENode(".name", x.constructor["::name"]),
-                        mktable(x)
+                        mktable(x, subrepr)
                     ]);
                 }
                 else if (Object.getPrototypeOf(x) === Object.prototype) {
-                    var rval = mktable(x);
+                    var rval = mktable(x, subrepr);
                 }
                 else {
                     var rval = simpleENode(".unknown", String(x));
