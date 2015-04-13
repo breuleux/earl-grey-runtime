@@ -418,9 +418,11 @@ function equal(a, b) {
         }
         return true;
     }
-    else if (Object.getPrototypeOf(a) === Object.prototype
-             && b !== undefined && typeof(b) === "object"
-             && Object.getPrototypeOf(b) === Object.prototype) {
+    else if (Object.getPrototypeOf(a) === null
+             || (Object.getPrototypeOf(a) === Object.prototype
+                 && b !== undefined && typeof(b) === "object"
+                 && (Object.getPrototypeOf(b) === null
+                     || Object.getPrototypeOf(b) === Object.prototype))) {
         var ka = Object.keys(a);
         if (!equal(ka.sort(), Object.keys(b).sort()))
             return false;
