@@ -1,4 +1,6 @@
 
+var convertHTML = require("../util").convertHTML;
+
 function toDOM(tag, attrs, children) {
     if (tag === null) {
         if (children instanceof Element)
@@ -37,4 +39,16 @@ function toDOM(tag, attrs, children) {
     }
 }
 
-exports.toDOM = toDOM
+function DOM(enode, converter) {
+    if (!converter)
+        converter = toDOM;
+    var res = convertHTML(enode, converter);
+    if (Array.isArray(res))
+        res = converter("top", {}, res);
+    return res;
+}
+
+module.exports = DOM
+DOM.DOM = DOM
+DOM.toDOM = toDOM
+
