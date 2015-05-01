@@ -1,7 +1,6 @@
 
 var _util = require("../util");
 var convertHTML = _util.convertHTML;
-var convertHTML2 = _util.convertHTML2;
 var normalize = _util.normalize;
 
 function escapeHTML(s) {
@@ -23,7 +22,7 @@ var voidTags = [
     "track", "wbr"
 ]
 
-function toHTML2(tag, classes, attrs, children, raw) {
+function toHTML(tag, classes, attrs, children, raw) {
 
     if (tag === null)
         return escapeHTML(String(children));
@@ -64,61 +63,10 @@ function toHTML2(tag, classes, attrs, children, raw) {
     return result;
 }
 
-
-function toHTML(tag, attrs, children) {
-    if (tag === null) {
-        return escapeHTML(String(children));
-    }
-    else if (tag === "top") {
-        return children.join("");
-    }
-    else {
-        var result = "";
-        if (tag != "")
-            result += "<" + tag;
-        var innerhtml = null;
-        if (attrs.innerHTML) {
-            innerhtml = String(attrs.innerHTML);
-            delete attrs.innerHTML;
-        }
-        items(attrs).forEach(function (kv) {
-            result += " " + kv[0] + "=" + quotify(String(kv[1]));
-        });
-        if (tag != "")
-            result += ">"
-        if (innerhtml) {
-            result += innerhtml
-            if (tag != "")
-                result += "</" + tag + ">"
-        }
-        else if (children.length > 0) {
-            children.forEach(function (c) {
-                result += c;
-            });
-            if (tag != "")
-                result += "</" + tag + ">"
-        }
-        else if (tag && voidTags.indexOf(tag) == -1) {
-            if (tag != "")
-                result += "</" + tag + ">"
-        }
-        return result;            
-    }
-}
-
 function HTML(enode, converter) {
     if (!converter)
         converter = toHTML;
     var res = convertHTML(enode, converter);
-    if (Array.isArray(res))
-        res = converter("top", {}, res);
-    return res;
-}
-
-function HTML2(enode, converter) {
-    if (!converter)
-        converter = toHTML2;
-    var res = convertHTML2(enode, converter);
     if (Array.isArray(res))
         res = converter("top", [], {}, res, null);
     return res;
@@ -127,7 +75,7 @@ function HTML2(enode, converter) {
 function HTMLNode(tags, props, children) {
     if (!Array.isArray(children))
         children = [children];
-    return toHTML2.apply(null, normalize(tags, props, children));
+    return toHTML.apply(null, normalize(tags, props, children));
 }
 
 function percentMacro(expr) {
@@ -144,9 +92,9 @@ function percentMacro(expr) {
 percentMacro.__deps = {HTMLNode: "ENode"};
 percentMacro.__path = __filename;
 
-module.exports = HTML2;
-HTML2.HTML = HTML2;
-HTML2.toHTML = toHTML2;
-HTML2.ENode = HTMLNode;
-HTML2["%"] = percentMacro;
-HTML2.normalize = normalize;
+module.exports = HTML;
+HTML.HTML = HTML;
+HTML.toHTML = toHTML;
+HTML.ENode = HTMLNode;
+HTML["%"] = percentMacro;
+HTML.normalize = normalize;

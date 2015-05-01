@@ -36,7 +36,6 @@ function normalize(tags, _attrs, _children) {
 
 exports.normalize = normalize
 
-
 function collapse(x) {
     if (Array.isArray(x)) {
         var res = [];
@@ -53,71 +52,14 @@ function collapse(x) {
     }
 }
 
-
 function convertHTML(x, create) {
-    // create(tag, attrs, children, source)
     if (Array.isArray(x)) {
         return collapse(x.map(function (x) { return convertHTML(x, create); }));
     }
     else if (x instanceof ENode) {
-        var raw = false;
-        var tag = null;
-        var classes = [];
-        var attrs = clone(x.props);
-        var children = [];
-        x.tags.forEach(function (t) {
-            if (t[0] === ".")
-                classes.push(t.slice(1));
-            else if (t[0] === "#")
-                attrs.id = t.slice(1);
-            else if (t === "raw")
-                raw = true
-            else
-                tag = t;
-        });
-        if (classes.length > 0)
-            attrs["class"] = classes.join(" ");
-        if (raw) {
-            attrs.innerHTML = "";
-            x.children.forEach(function (c) {
-                attrs.innerHTML += String(c);
-            });
-        }
-        else {
-            x.children.forEach(function (c) {
-                children.push(convertHTML(c, create));
-            });
-        }
-        children = collapse(children);
-
-        if (tag === null && equal(attrs, {})) {
-            return children;
-        }
-        else if (tag === null && raw && equal(keys(attrs), ["innerHTML"])) {
-            return create("", attrs, children, x);
-        }
-        else {
-            return create(tag || "span", attrs, children, x);
-        }
-    }
-    else {
-        return create(null, null, x, x);
-    }
-}
-
-exports.convertHTML = convertHTML
-
-
-
-
-function convertHTML2(x, create) {
-    if (Array.isArray(x)) {
-        return collapse(x.map(function (x) { return convertHTML2(x, create); }));
-    }
-    else if (x instanceof ENode) {
         var norm = normalize(x.tags, x.props, x.children);
         norm[3] = norm[3].map(function (x) {
-            return convertHTML2(x, create)
+            return convertHTML(x, create)
         });
         return create.apply(x, norm);
     }
@@ -126,5 +68,5 @@ function convertHTML2(x, create) {
     }
 }
 
-exports.convertHTML2 = convertHTML2
+exports.convertHTML = convertHTML
 
