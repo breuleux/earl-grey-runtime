@@ -1,4 +1,42 @@
 
+function normalize(tags, _attrs, _children) {
+
+    var raw = null;
+    var tag = "";
+    var attrs = clone(_attrs);
+    var classes = attrs["class"] ? [attrs["class"]] : [];
+    delete attrs["class"];
+    var children = [];
+
+    tags.forEach(function (t) {
+        if (t[0] === ".")
+            classes.push(t.slice(1));
+        else if (t[0] === "#")
+            attrs.id = t.slice(1);
+        else if (t === "raw")
+            raw = true;
+        else
+            tag = t;
+    });
+
+    if (attrs.innerHTML) {
+        raw = attrs.innerHTML;
+        delete attrs.innerHTML;
+    }
+
+    if (raw) {
+        raw = collapse(_children).map(function (x) { return String(x); }).join("");
+    }
+    else {
+        children = collapse(_children);
+    }
+
+    return [tag, classes, attrs, children, raw];
+}
+
+exports.normalize = normalize
+
+
 function collapse(x) {
     if (Array.isArray(x)) {
         var res = [];
@@ -14,6 +52,7 @@ function collapse(x) {
         return x;
     }
 }
+
 
 function convertHTML(x, create) {
     // create(tag, attrs, children, source)
@@ -67,3 +106,25 @@ function convertHTML(x, create) {
 }
 
 exports.convertHTML = convertHTML
+
+
+
+
+function convertHTML2(x, create) {
+    if (Array.isArray(x)) {
+        return collapse(x.map(function (x) { return convertHTML2(x, create); }));
+    }
+    else if (x instanceof ENode) {
+        var norm = normalize(x.tags, x.props, x.children);
+        norm[3] = norm[3].map(function (x) {
+            return convertHTML2(x, create)
+        });
+        return create.apply(x, norm);
+    }
+    else {
+        return create.call(x, null, [], {}, x, null);
+    }
+}
+
+exports.convertHTML2 = convertHTML2
+
