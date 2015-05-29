@@ -420,7 +420,7 @@ function equal(a, b) {
     }
     else if (Object.getPrototypeOf(a) === null
              || (Object.getPrototypeOf(a) === Object.prototype
-                 && b !== undefined && typeof(b) === "object"
+                 && b !== undefined && b !== null && typeof(b) === "object"
                  && (Object.getPrototypeOf(b) === null
                      || Object.getPrototypeOf(b) === Object.prototype))) {
         var ka = Object.keys(a);
