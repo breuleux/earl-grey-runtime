@@ -1,11 +1,11 @@
 {
   "name": "earlgrey-runtime",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Runtime for the Earl Grey programming language.",
   "main": "./lib.js",
   "dependencies": {
-    "core-js": "^0.5.4",
-    "regenerator": "^0.8.13"
+    "core-js": "^0.9.18",
+    "regenerator": "^0.8.32"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
