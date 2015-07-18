@@ -732,10 +732,11 @@ global["promisify"] = promisify;
 
 
 // adapted from https://github.com/lukehoban/ecmascript-asyncawait
-function spawn(genF) {
+function spawn(genF, eager) {
     var self = this;
     var done = false;
     var value = null;
+    var error = null;
     var prom = new Promise(function(resolve, reject) {
         var gen = genF.call(self);
         function step(nextF) {
@@ -744,7 +745,8 @@ function spawn(genF) {
                 next = nextF();
             } catch(e) {
                 // finished with failure, reject the promise
-                reject(e);
+                done = true;
+                reject(error = e);
                 return;
             }
             if(next.done) {
@@ -762,9 +764,11 @@ function spawn(genF) {
         }
         step(function() { return gen.next(undefined); });
     });
-    if (done) {
+    if (eager && done) {
         // If the promise is already resolved by the time we get here,
         // we return the value directly
+        if (error)
+            throw error;
         return value;
     }
     else {
