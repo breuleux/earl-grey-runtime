@@ -13,6 +13,8 @@ Symbol.clone = "::clone"
 Symbol.send = "::send"
 Symbol.contains = "::contains"
 Symbol.repr = "::repr"
+Symbol.equals = "::equals"
+Symbol.requals = "::requals"
 
 
 // EXTENSIONS TO STANDARD OBJECTS
@@ -431,6 +433,12 @@ function equal(a, b) {
                 return false;
         }
         return true;
+    }
+    else if (typeof(a) === "object" && a[Symbol.equals]) {
+        return a[Symbol.equals](b);
+    }
+    else if (typeof(b) === "object" && b[Symbol.requals]) {
+        return b[Symbol.requals](a);
     }
     else if (typeof(a) === "object" && a["::serialize"]) {
         if (b !== undefined && typeof(b) === "object" && b["::serialize"]) {
