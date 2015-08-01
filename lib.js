@@ -1,6 +1,8 @@
 
 "use strict";
 
+var kaiser = require("kaiser/reg");
+
 if (typeof(global) === "undefined")
     global = window;
 
@@ -15,6 +17,7 @@ Symbol.contains = "::contains"
 Symbol.repr = "::repr"
 Symbol.equals = "::equals"
 Symbol.requals = "::requals"
+Symbol.errorTags = "::tags"
 
 
 // EXTENSIONS TO STANDARD OBJECTS
@@ -913,3 +916,7 @@ ENode.prototype.toString = function () {
     return this.children.map(function (x) { return String(x); }).join("");
 };
 
+
+kaiser.register(ENode.prototype, {
+    typeId: "earl-grey-runtime/ENode"
+});
