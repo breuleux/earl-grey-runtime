@@ -440,7 +440,7 @@ function equal(a, b) {
     else if (typeof(a) === "object" && a[Symbol.equals]) {
         return a[Symbol.equals](b);
     }
-    else if (typeof(b) === "object" && b[Symbol.requals]) {
+    else if (b && typeof(b) === "object" && b[Symbol.requals]) {
         return b[Symbol.requals](a);
     }
     else if (typeof(a) === "object" && a["::serialize"]) {
