@@ -23,7 +23,6 @@ var voidTags = [
 ]
 
 function toHTML(tag, classes, attrs, children, raw) {
-
     if (tag === null)
         return escapeHTML(String(children));
 
@@ -35,7 +34,7 @@ function toHTML(tag, classes, attrs, children, raw) {
         attrs["class"] = classes.join(" ");
     }
     if (!tag && (!equal(classes, []) || !equal(attrs, {}))) {
-        tag = "span";
+        tag = "div";
     }
 
     if (tag) result += "<" + tag;

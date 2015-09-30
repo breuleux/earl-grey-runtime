@@ -19,7 +19,7 @@ function toDOM(tag, classes, attrs, children, raw) {
         if (children.length == 1)
             return children[0];
         else {
-            var node = document.createElement("span");
+            var node = document.createElement("div");
             children.forEach(function (x) {
                 node.appendChild(x);
             });
@@ -27,7 +27,7 @@ function toDOM(tag, classes, attrs, children, raw) {
         }
     }
 
-    tag = tag || "span";
+    tag = tag || "div";
 
     if (attrs.namespace)
         var node = document.createElementNS(attrs.namespace, tag);
