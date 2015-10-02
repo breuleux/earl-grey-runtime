@@ -17,9 +17,9 @@
     "url": "https://github.com/breuleux/earl-grey-runtime"
   },
   "keywords": [
-    "Programming language",
-    "Macros",
-    "Pattern matching"
+    "earlgrey",
+    "macros",
+    "pattern-matching"
   ],
   "author": "Olivier Breuleux",
   "license": "MIT"
