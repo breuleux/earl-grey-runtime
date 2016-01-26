@@ -39,7 +39,12 @@ function toHTML(tag, classes, attrs, children, raw) {
 
     if (tag) result += "<" + tag;
     items(attrs).forEach(function (kv) {
-        result += " " + kv[0] + "=" + quotify(String(kv[1]));
+        if (kv[1] === true) {
+            result += " " + kv[0];
+        }
+        else if (kv[1] !== false) {
+            result += " " + kv[0] + "=" + quotify(String(kv[1]));
+        }
     });
     if (tag) result += ">";
 
