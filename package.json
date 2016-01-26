@@ -6,7 +6,7 @@
   "dependencies": {
     "core-js": "^0.9.18",
     "regenerator": "^0.8.32",
-    "kaiser": ">=0.0.2"
+    "kaiser": ">=0.0.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
