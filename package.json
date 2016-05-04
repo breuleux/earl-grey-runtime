@@ -5,7 +5,7 @@
   "main": "./lib.js",
   "dependencies": {
     "core-js": "^0.9.18",
-    "regenerator": "^0.8.32",
+    "regenerator-runtime": "^0.9.5",
     "kaiser": ">=0.0.4"
   },
   "scripts": {
