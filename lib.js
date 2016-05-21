@@ -239,8 +239,6 @@ function ___hasprop(obj, key) {
         return key in Number.prototype;
     else if (t === "boolean")
         return key in Boolean.prototype;
-    else if (t === "boolean")
-        return key in Boolean.prototype;
     else if (t === "symbol")
         return key in Symbol.prototype;
     else if (key in obj || t === "function" && Array.isArray(key))
