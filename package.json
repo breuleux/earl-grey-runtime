@@ -4,7 +4,7 @@
   "description": "Runtime for the Earl Grey programming language.",
   "main": "./lib.js",
   "dependencies": {
-    "core-js": "^0.9.18",
+    "core-js": "^2.4.0",
     "regenerator-runtime": "^0.9.5",
     "kaiser": ">=0.0.4"
   },
