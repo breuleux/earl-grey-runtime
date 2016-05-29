@@ -525,6 +525,9 @@ function createRepr(state) {
                 else if (Object.getPrototypeOf(x) === Object.prototype) {
                     var rval = mktable(x, subrepr);
                 }
+                else if (Object.getPrototypeOf(x) === null) {
+                    var rval = mktable(x, subrepr);
+                }
                 else {
                     var rval = simpleENode(".unknown", String(x));
                 }
