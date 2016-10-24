@@ -41,7 +41,7 @@ function collapse(x) {
         var res = [];
         x.forEach(function (y) {
             if (Array.isArray(y))
-                res = res.concat(y);
+                res = res.concat(collapse(y));
             else
                 res.push(y);
         });
