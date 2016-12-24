@@ -149,7 +149,7 @@ var _array_methods = {
     },
     "partition": function (predicate) {
         return partition(this, predicate);
-    }
+    },
     "enumerate": function () {
         return enumerate(this);
     },
