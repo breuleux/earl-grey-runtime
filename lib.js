@@ -2,6 +2,9 @@
 "use strict";
 
 var kaiser = require("kaiser/reg");
+var sortBy = require("lodash/sortBy");
+var groupBy = require("lodash/groupBy");
+var partition = require("lodash/partition");
 
 if (typeof(global) === "undefined")
     global = window;
@@ -137,6 +140,27 @@ var _array_methods = {
         return ENode([], {}, this.map(function (x) {
             return repr(x);
         })).join(sep);
+    },
+    "sortBy": function (iteratees) {
+        return sortBy(this, iteratees);
+    },
+    "groupBy": function (iteratees) {
+        return groupBy(this, iteratees);
+    },
+    "partition": function (predicate) {
+        return partition(this, predicate);
+    }
+    "enumerate": function () {
+        return enumerate(this);
+    },
+    "zip": function () {
+        return zip.apply(this, [this].concat([].slice.call(arguments)));
+    },
+    "product": function (b) {
+        return product(this, b);
+    },
+    "neighbours": function (n) {
+        return neighbours(this, n);
     }
 };
 
@@ -358,7 +382,6 @@ function enumerate(arr) {
     return results;
 }
 global["enumerate"] = enumerate;
-
 
 function zip() {
     var r = [];

@@ -5,8 +5,9 @@
   "main": "./lib.js",
   "dependencies": {
     "core-js": "^2.4.0",
-    "regenerator-runtime": "^0.9.5",
-    "kaiser": ">=0.0.4"
+    "kaiser": ">=0.0.4",
+    "lodash": "^4.17.2",
+    "regenerator-runtime": "^0.9.5"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
