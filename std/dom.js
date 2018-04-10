@@ -7,7 +7,7 @@ var normalize = _util.normalize;
 function toDOM(tag, classes, attrs, children, raw) {
 
     if (tag === null) {
-        if (children instanceof Element)
+        if (children instanceof Node)
             return children;
         else
             return document.createTextNode(String(children));
