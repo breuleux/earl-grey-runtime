@@ -47,7 +47,9 @@ function toDOM(tag, classes, attrs, children, raw) {
     items(attrs).forEach(function (kv) {
         if (kv[0].startsWith("on"))
             node[kv[0]] = kv[1];
-        else
+        else if (kv[1] === true)
+            node.setAttribute(kv[0], "");
+        else if (kv[1] !== false)
             node.setAttribute(kv[0], kv[1]);
     });
 
